@@ -1,0 +1,82 @@
+{
+  "SOPClassUID": "1.2.840.10008.5.1.4.1.1.66.4",
+  "SOPInstanceUID": "2.25.127195353115796595128197266861959541877",
+  "StudyInstanceUID": "1.2.826.0.1.3680043.8.BraTS_2026_001",
+  "SeriesInstanceUID": "2.25.59915179424082718641798410745860509860",
+  "ReferencedSeriesInstanceUID": "1.2.826.0.1.BraTS_2026_001.t1ce",
+  "PatientID": "BraTS_2026_001",
+  "Modality": "SEG",
+  "SeriesDescription": "AI Multi-Task Segmentation: Glioblastoma Grade IV (94.0%)",
+  "Manufacturer": "Antigravity Clinical AI",
+  "SoftwareVersions": "v1.0.0",
+  "SpatialGeometry": {
+    "Dimensions": [
+      64,
+      64,
+      64
+    ],
+    "Spacing": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "Origin": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "DirectionCosines": [
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  },
+  "Segments": [
+    {
+      "segment_number": 1,
+      "label_id": "ET",
+      "description": "Enhancing Tumor (Active Contrast-Enhancing Pathological Tissue)",
+      "category": "Morphologically Altered Structure",
+      "type": "Malignant Neoplasm",
+      "color_rgb": [
+        255,
+        40,
+        40
+      ]
+    },
+    {
+      "segment_number": 2,
+      "label_id": "TC",
+      "description": "Tumor Core (Necrotic + Non-Enhancing Core + Enhancing)",
+      "category": "Morphologically Altered Structure",
+      "type": "Neoplasm Core",
+      "color_rgb": [
+        255,
+        200,
+        0
+      ]
+    },
+    {
+      "segment_number": 3,
+      "label_id": "WT",
+      "description": "Whole Tumor (Tumor Core + Peritumoral Vasogenic Edema)",
+      "category": "Morphologically Altered Structure",
+      "type": "Gross Tumor Volume",
+      "color_rgb": [
+        0,
+        220,
+        100
+      ]
+    }
+  ],
+  "ClinicalVerdict": {
+    "Classification": "Glioblastoma Grade IV",
+    "Confidence": 0.94
+  }
+}

@@ -1,0 +1,27 @@
+inference:
+  patch_size: [128, 128, 128]
+  overlap: 0.5
+  blend_mode: "gaussian"
+  sigma_scale: 0.125
+  batch_size: 1
+  device: "cuda" # or "cpu"
+
+active_learning:
+  mc_dropout_passes: 10
+  uncertainty_metric: "epistemic_variance"
+  volume_uncertainty_threshold: 0.08
+  top_k_candidates: 5
+
+pacs:
+  orthanc_host: "localhost"
+  orthanc_port: 8042
+  dicomweb_root: "/dicom-web"
+  wado_rs_url: "http://localhost:8042/dicom-web/studies"
+  qido_rs_url: "http://localhost:8042/dicom-web/studies"
+  stow_rs_url: "http://localhost:8042/dicom-web/studies"
+
+server:
+  host: "0.0.0.0"
+  port: 8000
+  title: "Clinical Brain Tumor Segmentation & Classification API"
+  version: "1.0.0"

@@ -1,0 +1,22 @@
+{
+  "case_id": "BraTS_2026_002",
+  "tumor_type": "Glioma Grade II/III",
+  "classification_label": 0,
+  "shape": [
+    64,
+    64,
+    64
+  ],
+  "spacing": [
+    1.0,
+    1.0,
+    1.0
+  ],
+  "paths": {
+    "t1": "data/sample_cases\\BraTS_2026_002_t1.nii.gz",
+    "t1ce": "data/sample_cases\\BraTS_2026_002_t1ce.nii.gz",
+    "t2": "data/sample_cases\\BraTS_2026_002_t2.nii.gz",
+    "flair": "data/sample_cases\\BraTS_2026_002_flair.nii.gz",
+    "seg": "data/sample_cases\\BraTS_2026_002_seg.nii.gz"
+  }
+}

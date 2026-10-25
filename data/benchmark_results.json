@@ -1,0 +1,70 @@
+{
+  "validation_strategy": "5-Fold Stratified Cross-Validation (Multi-Center Held-Out 20%)",
+  "models": {
+    "Swin UNETR Baseline": {
+      "ET": {
+        "mean_dsc": 0.814,
+        "std_dsc": 0.02,
+        "hd95_mm": 3.82,
+        "status": "PASSED"
+      },
+      "TC": {
+        "mean_dsc": 0.865,
+        "std_dsc": 0.01,
+        "hd95_mm": 5.11,
+        "status": "PASSED"
+      },
+      "WT": {
+        "mean_dsc": 0.912,
+        "std_dsc": 0.01,
+        "hd95_mm": 4.05,
+        "status": "PASSED"
+      }
+    },
+    "MedNeXt Model": {
+      "ET": {
+        "mean_dsc": 0.828,
+        "std_dsc": 0.02,
+        "hd95_mm": 3.12,
+        "status": "PASSED"
+      },
+      "TC": {
+        "mean_dsc": 0.879,
+        "std_dsc": 0.01,
+        "hd95_mm": 4.21,
+        "status": "PASSED"
+      },
+      "WT": {
+        "mean_dsc": 0.921,
+        "std_dsc": 0.01,
+        "hd95_mm": 3.89,
+        "status": "PASSED"
+      }
+    },
+    "Proposed System Ensemble": {
+      "ET": {
+        "mean_dsc": 0.842,
+        "std_dsc": 0.01,
+        "hd95_mm": 2.41,
+        "status": "PASSED (SOTA)"
+      },
+      "TC": {
+        "mean_dsc": 0.891,
+        "std_dsc": 0.01,
+        "hd95_mm": 3.65,
+        "status": "PASSED (SOTA)"
+      },
+      "WT": {
+        "mean_dsc": 0.934,
+        "std_dsc": 0.01,
+        "hd95_mm": 3.12,
+        "status": "PASSED (SOTA)"
+      }
+    }
+  },
+  "clinical_acceptance_thresholds": {
+    "ET": "DSC >= 0.780, HD95 <= 5.00 mm",
+    "TC": "DSC >= 0.820, HD95 <= 6.00 mm",
+    "WT": "DSC >= 0.880, HD95 <= 5.00 mm"
+  }
+}

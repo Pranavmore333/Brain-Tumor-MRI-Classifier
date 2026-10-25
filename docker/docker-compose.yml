@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # 1. Enterprise Clinical PACS Storage (Orthanc + DICOMweb)
+  orthanc-pacs:
+    image: orthancteam/orthanc:24.3.0
+    container_name: brain_tumor_orthanc_pacs
+    restart: unless-stopped
+    ports:
+      - "8042:8042" # HTTP DICOMweb REST API
+      - "4242:4242" # DICOM C-STORE / C-MOVE Port
+    environment:
+      - ORTHANC__DICOM_WEB__ENABLE=true
+    volumes:
+      - ./orthanc.json:/etc/orthanc/orthanc.json:ro
+      - orthanc_data:/var/lib/orthanc/db
+
+  # 2. Deep Learning AI Orchestration Middleware (FastAPI + MONAI Label)
+  ai-middleware:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: brain_tumor_ai_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - ORTHANC_HOST=orthanc-pacs
+      - ORTHANC_PORT=8042
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ../data:/app/data
+      - ../configs:/app/configs
+    depends_on:
+      - orthanc-pacs
+
+  # 3. Clinical Diagnostic Web Viewer (OHIF Viewer v3)
+  ohif-viewer:
+    image: ohif/viewer:v3.8.0
+    container_name: brain_tumor_ohif_viewer
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    environment:
+      - APP_CONFIG=/app/app-config.js
+    depends_on:
+      - orthanc-pacs
+      - ai-middleware
+
+volumes:
+  orthanc_data:
