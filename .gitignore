@@ -30,6 +30,12 @@ ENV/
 checkpoints/*.pth
 !checkpoints/.gitkeep
 
+# Local datasets, case records, and uploaded MRI images
+/dataset/*
+!/dataset/README.md
+/instance/
+/static/uploads/*
+
 # Testing temporary directories
 data/test_tmp/
 

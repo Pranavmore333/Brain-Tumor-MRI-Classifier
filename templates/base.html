@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f6f8f7">
+    <title>{% block title %}SliceLab — MRI Learning Project{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <header class="site-header">
+        <a class="brand" href="{{ url_for('index') }}" aria-label="SliceLab home">
+            <span class="brand-mark">S</span>
+            <span><strong>SliceLab</strong><small>Brain MRI learning project</small></span>
+        </a>
+        <nav class="site-nav" aria-label="Main navigation">
+            <a class="{% if active_page == 'analyze' %}active{% endif %}" href="{{ url_for('index') }}">Analyze</a>
+            <a class="{% if active_page == 'history' %}active{% endif %}" href="{{ url_for('history') }}">Case log</a>
+            <a class="{% if active_page == 'about' %}active{% endif %}" href="{{ url_for('about') }}">About</a>
+        </nav>
+        <span class="header-note">A student-built demo</span>
+    </header>
+    <main class="page-shell">
+        {% block content %}{% endblock %}
+    </main>
+    <footer class="site-footer">
+        <span>Built to learn deep learning, not to make medical decisions.</span>
+        <a href="{{ url_for('about') }}">How it works &amp; limitations</a>
+    </footer>
+    <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

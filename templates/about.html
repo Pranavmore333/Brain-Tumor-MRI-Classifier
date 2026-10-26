@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}About the project — SliceLab{% endblock %}
+
+{% block content %}
+<section class="page-heading">
+    <p class="eyebrow">Project guide</p>
+    <h1>Small enough to understand.<br><span>Complete enough to learn from.</span></h1>
+    <p>SliceLab is an individual-student deep-learning project: one image classifier, one Flask app, one local database, and an explanation view.</p>
+</section>
+
+<section class="about-grid">
+    <article class="panel about-card">
+        <span class="step-number">01</span>
+        <h2>The model</h2>
+        <p>A custom four-block convolutional neural network built in PyTorch classifies a single 2D slice as glioma, meningioma, no tumor, or pituitary. It is trained from scratch on the dataset you supply.</p>
+    </article>
+    <article class="panel about-card">
+        <span class="step-number">02</span>
+        <h2>The useful twist</h2>
+        <p>Every result includes a Grad-CAM overlay and can be given an optional human review label. The local case log makes model/reviewer differences visible for learning and error analysis.</p>
+    </article>
+    <article class="panel about-card">
+        <span class="step-number">03</span>
+        <h2>The stack</h2>
+        <p>Flask serves the pages and JSON endpoints; SQLite stores case records; PyTorch handles training and inference; Pillow and OpenCV handle image input and Grad-CAM display.</p>
+    </article>
+</section>
+
+<section class="panel setup-panel">
+    <p class="eyebrow">Run it on your own dataset</p>
+    <h2>Quick setup</h2>
+    <ol class="setup-steps">
+        <li>Install the packages: <code>python -m pip install -r requirements.txt</code></li>
+        <li>Put your permitted, labeled images into <code>dataset/Training</code> and <code>dataset/Testing</code>.</li>
+        <li>Each folder needs <code>glioma</code>, <code>meningioma</code>, <code>notumor</code>, and <code>pituitary</code> subfolders.</li>
+        <li>Train: <code>python train.py --epochs 10</code>. Training uses a stratified 80/20 split of the Training folder.</li>
+        <li>Evaluate once on your held-out test set: <code>python evaluate.py</code>.</li>
+        <li>Start the app: <code>python app.py</code>, then open <code>http://127.0.0.1:5000</code>.</li>
+    </ol>
+    <p class="field-hint">The app accepts PNG/JPG 2D images only. It does not read DICOM or NIfTI volumes. No sample scans, fake scores, or pre-trained project checkpoint are bundled.</p>
+</section>
+
+<section class="notice notice-warn">
+    <strong>Important limitation</strong>
+    This is an academic prototype, not a medical device or clinical decision-support tool. Predictions and Grad-CAM maps can be wrong or misleading; never use them to diagnose, triage, or treat anyone. Dataset quality, patient-level splits, external validation, privacy, and clinical/regulatory review are all outside this project.
+</section>
+
+<section class="panel future-panel">
+    <p class="eyebrow">Who it can help</p>
+    <h2>A useful portfolio project, not a product claim</h2>
+    <p>It is useful for students and instructors demonstrating image classification, explainability, API design, persistence, and human review. With appropriately licensed data and proper patient-level validation, it can support research into model errors or serve as an offline teaching tool.</p>
+    <p>For income, the realistic near-term value is employability: use the project to demonstrate skills for junior AI/ML or Python roles, or to offer tutoring and workshops. A clinical product would require substantial independent validation, privacy/security controls, specialist oversight, and regulatory approval before any sale.</p>
+</section>
+{% endblock %}

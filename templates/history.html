@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Case log — SliceLab{% endblock %}
+
+{% block content %}
+<section class="page-heading">
+    <p class="eyebrow">Local SQLite record</p>
+    <h1>Your case log</h1>
+    <p>Compare model outputs with optional reviewer labels. A review label is a note, not verified ground truth.</p>
+</section>
+
+<div class="summary-row">
+    <div class="summary-card"><strong>{{ stats.total_scans }}</strong><span>saved cases</span></div>
+    <div class="summary-card"><strong>{{ stats.reviewed_scans }}</strong><span>with a review label</span></div>
+</div>
+
+<form class="filter-bar" method="get" action="{{ url_for('history') }}">
+    <label class="sr-only" for="search-cases">Search by case label</label>
+    <input class="text-field" id="search-cases" name="q" value="{{ search_query }}" placeholder="Search case label">
+    <label class="sr-only" for="filter-class">Filter by model output</label>
+    <select class="text-field" id="filter-class" name="class">
+        <option value="all">All model outputs</option>
+        {% for class_name in class_names %}
+        <option value="{{ class_name }}" {% if filter_class == class_name %}selected{% endif %}>{{ class_name }}</option>
+        {% endfor %}
+    </select>
+    <button class="button button-secondary" type="submit">Filter</button>
+    {% if search_query or filter_class != 'all' %}<a class="clear-link" href="{{ url_for('history') }}">Clear</a>{% endif %}
+</form>
+
+{% if scans %}
+<section class="case-list" aria-label="Saved cases">
+    {% for scan in scans %}
+    <article class="case-card" id="case-{{ scan.id }}" data-case-id="{{ scan.id }}">
+        <div class="case-images">
+            <img src="{{ url_for('static', filename='uploads/' + scan.original_image) }}" alt="Uploaded MRI slice for {{ scan.case_label }}">
+            {% if scan.gradcam_image %}<img src="{{ url_for('static', filename='uploads/' + scan.gradcam_image) }}" alt="Grad-CAM overlay for {{ scan.case_label }}">{% endif %}
+        </div>
+        <div class="case-content">
+            <div class="case-topline"><span class="case-code">{{ scan.case_label }}</span><time>{{ scan.created_at }}</time></div>
+            <h2>{{ scan.predicted_class }} <span>{{ scan.confidence }}% model score</span></h2>
+            {% if scan.notes %}<p class="case-note">{{ scan.notes }}</p>{% endif %}
+            <div class="review-current">
+                {% if scan.reviewed_class %}
+                    <span class="review-chip">Review label: {{ scan.reviewed_class }}</span>
+                    {% if scan.reviewed_class == scan.predicted_class %}<span class="match-note">Same as model output</span>{% else %}<span class="difference-note">Different from model output</span>{% endif %}
+                    {% if scan.review_note %}<p class="case-note">{{ scan.review_note }}</p>{% endif %}
+                {% else %}
+                    <span class="review-pending">No review label recorded</span>
+                {% endif %}
+            </div>
+            <form class="review-form" data-review-form>
+                <label class="sr-only" for="review-label-{{ scan.id }}">Optional review label</label>
+                <select class="text-field" id="review-label-{{ scan.id }}" name="reviewed_class">
+                    <option value="">No review label</option>
+                    {% for class_name in class_names %}
+                    <option value="{{ class_name }}" {% if scan.reviewed_class == class_name %}selected{% endif %}>{{ class_name }}</option>
+                    {% endfor %}
+                </select>
+                <label class="sr-only" for="review-note-{{ scan.id }}">Review note</label>
+                <input class="text-field" id="review-note-{{ scan.id }}" name="review_note" maxlength="1000" value="{{ scan.review_note or '' }}" placeholder="Optional reviewer note">
+                <button class="button button-small button-secondary" type="submit">Save review</button>
+                <button class="button button-small button-quiet" type="button" data-delete-case>Delete</button>
+                <span class="review-message" role="status"></span>
+            </form>
+        </div>
+    </article>
+    {% endfor %}
+</section>
+{% else %}
+<section class="empty-log">
+    <h2>No saved cases yet</h2>
+    <p>Analyze a scan to start a local, reviewable case log.</p>
+    <a class="button button-primary" href="{{ url_for('index') }}">Analyze an MRI</a>
+</section>
+{% endif %}
+<div class="notice notice-info">Do not use real patient identifiers. This student demo is not designed for storing clinical records.</div>
+{% endblock %}

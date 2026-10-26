@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Analyze an MRI — SliceLab{% endblock %}
+
+{% block content %}
+<section class="intro">
+    <div>
+        <p class="eyebrow">A small, explainable deep-learning project</p>
+        <h1>Explore a brain MRI,<br><span>one slice at a time.</span></h1>
+        <p class="intro-copy">Upload one 2D image to see a four-class CNN prediction, a Grad-CAM view, and a saved case you can review later.</p>
+    </div>
+    <div class="model-state {% if model_ready %}is-ready{% else %}is-missing{% endif %}">
+        <span class="state-dot"></span>
+        <span><strong>{{ model_status }}</strong><small>{% if model_ready %}Inference runs on this computer{% elif model_error %}Check the server log{% else %}Start with the About page{% endif %}</small></span>
+    </div>
+</section>
+
+{% if not model_ready %}
+<div class="notice notice-warn" role="status">
+    <strong>Predictions are not enabled yet.</strong>
+    This app will not guess using random weights. Prepare your dataset, run the training command on the <a href="{{ url_for('about') }}">About page</a>, then restart the app.
+</div>
+{% endif %}
+
+<section class="workspace" aria-label="MRI analysis">
+    <form class="panel upload-panel" id="analysis-form">
+        <div class="panel-heading">
+            <span class="step-number">01</span>
+            <div><h2>Add a scan</h2><p>One axial PNG or JPG image, up to 8 MB.</p></div>
+        </div>
+        <label class="upload-zone" id="upload-zone" for="mri-image">
+            <input id="mri-image" name="image" type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" required>
+            <span class="upload-symbol" aria-hidden="true">↑</span>
+            <strong id="upload-title">Choose an MRI image</strong>
+            <span id="upload-description">Browse files or drop one here</span>
+        </label>
+        <img class="image-preview hidden" id="image-preview" alt="Selected MRI preview">
+
+        <label class="field-label" for="case-label">Case label <span>optional</span></label>
+        <input class="text-field" id="case-label" name="case_label" maxlength="64" placeholder="e.g. study-014">
+        <p class="field-hint">Use a study code only. Do not enter a patient's name or other identifying details.</p>
+
+        <label class="field-label" for="case-notes">Study note <span>optional</span></label>
+        <textarea class="text-field" id="case-notes" name="notes" maxlength="1000" rows="3" placeholder="A short note for your own review log"></textarea>
+        <button class="button button-primary button-wide" id="analyze-button" type="submit" {% if not model_ready %}disabled{% endif %}>
+            <span id="button-label">{% if model_ready %}Analyze and save case{% else %}Train model to begin{% endif %}</span>
+        </button>
+        <p class="form-error hidden" id="form-error" role="alert"></p>
+        <p class="field-hint privacy-hint">Images and case notes stay on this computer in the local app folders.</p>
+    </form>
+
+    <section class="panel result-panel" aria-live="polite">
+        <div class="panel-heading">
+            <span class="step-number">02</span>
+            <div><h2>Model output</h2><p>Prediction and visual explanation</p></div>
+        </div>
+        <div class="empty-result" id="empty-result">
+            <div class="empty-art" aria-hidden="true"><span></span><span></span><span></span></div>
+            <h3>Your result will appear here</h3>
+            <p>Each run is automatically saved to your case log for optional human review.</p>
+        </div>
+        <div class="result-content hidden" id="result-content">
+            <div class="prediction-summary">
+                <div><span class="result-label">Top class</span><h3 id="result-class"></h3><p id="result-case"></p></div>
+                <div class="confidence"><strong id="result-confidence"></strong><span>model score</span></div>
+            </div>
+            <p class="result-disclaimer">This is a model prediction for coursework only, not a diagnosis.</p>
+            <div class="image-pair">
+                <figure><img id="original-image" alt="Uploaded MRI"><figcaption>Uploaded slice</figcaption></figure>
+                <figure><img id="gradcam-image" alt="Grad-CAM overlay"><figcaption>Grad-CAM overlay</figcaption></figure>
+            </div>
+            <div class="probability-list">
+                <h4>Class scores</h4>
+                <div id="probability-bars"></div>
+            </div>
+            <a class="button button-secondary" id="history-link" href="{{ url_for('history') }}">Open case log</a>
+        </div>
+    </section>
+</section>
+<section class="process-strip" aria-label="Project workflow">
+    <div><span>1</span><strong>Upload a slice</strong><small>PNG or JPG, not a full 3D scan</small></div>
+    <div><span>2</span><strong>Run one CNN</strong><small>Custom PyTorch model trained locally</small></div>
+    <div><span>3</span><strong>Review the output</strong><small>Grad-CAM and an optional review label</small></div>
+</section>
+{% endblock %}

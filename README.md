@@ -1,167 +1,84 @@
-# End-to-End Clinical-Grade Brain Tumor Segmentation and Classification System
+# SliceLab: brain MRI learning project
 
-An enterprise-ready deep learning platform for multi-task 3D brain tumor detection, segmentation, and histological grading from multi-parametric Magnetic Resonance Imaging (mpMRI) scans, conforming to International Brain Tumor Segmentation (BraTS) benchmark standards.
+SliceLab is a small, end-to-end deep-learning project intended for an individual undergraduate. It is deliberately one model and one workflow:
 
----
+1. Train a custom four-block CNN with PyTorch.
+2. Upload one 2D MRI slice in a Flask web app.
+3. View the predicted class, class scores, and a Grad-CAM overlay.
+4. Keep the result in a local SQLite case log and optionally add a human review label.
 
-## 1. Domain Context & Multi-Modal MRI Formulation
+The review log is the project's distinguishing feature: it lets a student inspect where the model and a reviewer disagree instead of presenting a prediction as a finished diagnosis. Review labels are not automatically treated as verified ground truth.
 
-Clinical diagnosis relies on 4 core MRI sequences:
-- **Native T1**: Short TR/TE pulse sequences; highlights general anatomical structures and gray-white matter boundaries.
-- **Post-Contrast T1-Weighted (T1Gd / T1ce)**: Gadolinium-based contrast agent; delineates hyper-vascularized active tumor margins and blood-brain barrier disruption.
-- **T2-Weighted**: Long TR/TE pulse sequences; high sensitivity to fluid accumulation, exposing peritumoral vasogenic edema.
-- **T2-FLAIR**: Inversion recovery suppressing free CSF; isolates non-enhancing hyperintensities.
+## What is included
 
-### Nested Pathological Sub-Regions
-- **Enhancing Tumor (ET)**: Active contrast-enhancing tissue ($\text{Label } 4$).
-- **Tumor Core (TC)**: Enhancing tumor + necrotic/non-enhancing core ($\text{Labels } 1 \cup 4$).
-- **Whole Tumor (WT)**: Tumor core + vasogenic edema ($\text{Labels } 1 \cup 2 \cup 4$).
+- `app.py`: Flask pages and JSON endpoints.
+- `models/cnn_model.py`: the single CNN architecture.
+- `models/gradcam.py`: Grad-CAM visualization for that CNN.
+- `mri_dataset.py`: image loading and a class-stratified validation split.
+- `train.py`: training and best-validation checkpoint saving.
+- `evaluate.py`: classification report and confusion matrix on a separate test folder.
+- `database.py`: SQLite persistence for predictions and optional review notes.
+- `templates/`, `static/`: responsive interface and browser interactions.
 
-### Multi-Task Objective
-Simultaneously predicts multi-label binary segmentation masks $Y \in \{0, 1\}^{H \times W \times D \times 3}$ for $[\mathcal{R}_{\text{ET}}, \mathcal{R}_{\text{TC}}, \mathcal{R}_{\text{WT}}]$ and global disease classification $y_{\text{class}} \in \{\text{Glioma Grade II/III}, \text{Glioblastoma Grade IV}, \text{Meningioma}\}$.
+No dataset, fabricated sample images, pre-trained project weights, or made-up benchmark results are included. The app disables inference until a real checkpoint has been trained.
 
----
+## Setup
 
-## 2. Advanced Deep Learning Architectures
+Python 3.12 is recommended (use a version with a compatible PyTorch wheel). In PowerShell:
 
-### Swin UNETR
-- **Encoder**: 3D Swin Transformer with non-overlapping $2\times 2\times 2$ patch partitions, alternating between Window Multi-Head Self-Attention (W-MSA) and Shifted Window (SW-MSA).
-- **3D Relative Position Bias**: $B \in \mathbb{R}^{M^3 \times M^3}$ added to attention maps:
-  $$\text{Attention}(Q, K, V) = \text{Softmax}\left(\frac{QK^T}{\sqrt{d_k}} + B\right)V$$
-- **Decoder**: Residual 3D CNN decoder across 5 resolution stages ($\frac{H}{2^i}\times\frac{W}{2^i}\times\frac{D}{2^i}$).
-- **Bottleneck Classifier**: Global average pooling + MLP classification head.
-
-### MedNeXt
-- Pure 3D ConvNeXt with large $7\times 7\times 7$ depthwise separable convolutions.
-- Inverted bottleneck with expansion factor 4 and residual LayerScale.
-
-### Composite Loss Function
-Combines multi-label Soft Dice with weighted Cross-Entropy to handle extreme class imbalance:
-$$\mathcal{L}_{\text{Composite}} = \mathcal{L}_{\text{Dice}} + \lambda_{\text{ce}} \mathcal{L}_{\text{BCE}} + \lambda_{\text{cls}} \mathcal{L}_{\text{Cls}}$$
-where:
-$$\mathcal{L}_{\text{Dice}} = 1 - \frac{2}{K}\sum_{k=1}^K \frac{\sum_{i=1}^V p_{i, k} g_{i, k} + \epsilon}{\sum_{i=1}^V p_{i, k}^2 + \sum_{i=1}^V g_{i, k}^2 + \epsilon}$$
-
----
-
-## 3. Full-Stack DICOM & Clinical PACS Integration
-
-```
-  OHIF Viewer v3 (React / WebGL)
-         │  DICOMweb (QIDO-RS / WADO-RS / STOW-RS)
-         ▼
-  Orthanc PACS Node ◄───► FastAPI + MONAI Label AI Service ───► Swin UNETR / MedNeXt
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
 
-- **QIDO-RS (`GET /dicom-web/studies`)**: Query PACS repository for studies.
-- **WADO-RS (`GET /dicom-web/studies/{studyUID}/series/{seriesUID}/instances`)**: Retrieve 3D volumetric DICOM instance stacks.
-- **STOW-RS (`POST /dicom-web/studies`)**: Store converted binary segmentation masks as standard DICOM SEG objects.
-- **MONAI Label (`POST /monai/inference/{model_name}`)**: Executes patch-based sliding window inference.
-- **Active Learning (`POST /monai/activelearn/next`)**: Prioritizes scans with highest epistemic variance for clinical re-annotation.
+If PyTorch's default package index does not provide a build suitable for your computer, install the CPU or CUDA build recommended by the [PyTorch installation selector](https://pytorch.org/get-started/locally/) before installing the remaining requirements.
 
----
+## Prepare the data
 
-## 4. Hardware Acceleration & Active Learning
+Use a dataset you are allowed to use. The common four-folder brain-tumor MRI image dataset layout is supported:
 
-- **Sliding Window Inference**: $128\times 128\times 128$ ROI patches, $50\%$ overlap ($\sigma = 0.5$), weighted with 3D spatial Gaussian kernel $W_{\text{Gauss}}$ to blend patch seams:
-  $$P_{\text{Final}}(x) = \frac{\sum_{j=1}^N W_{\text{Gauss}}(x - p_j) \cdot \hat{Y}_j(x - p_j)}{\sum_{j=1}^N W_{\text{Gauss}}(x - p_j)}$$
-- **Epistemic Uncertainty**: $M = 10$ Monte Carlo Dropout forward passes during inference:
-  $$\text{Var}_{\text{epistemic}}(x) = \frac{1}{M}\sum_{m=1}^M \left(p_m(x) - \bar{p}(x)\right)^2$$
-- **Hardware Acceleration**: ONNX export and TensorRT FP16/FP8 engine optimization reducing inference latency to $<28.4\text{ ms}$ per patch.
-
----
-
-## 5. Quantitative Evaluation Benchmarks
-
-Evaluated under 5-Fold Stratified Cross-Validation on multi-center patient cohorts:
-
-| Target Region | Metric | Swin UNETR Baseline | MedNeXt Model | Proposed Ensemble | Clinical Acceptance Threshold |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Enhancing Tumor (ET)** | Mean DSC | 0.814 +/- 0.02 | 0.828 +/- 0.02 | **0.842 +/- 0.01** | >= 0.780 |
-| **Enhancing Tumor (ET)** | HD_95 (mm) | 3.82 mm | 3.12 mm | **2.41 mm** | <= 5.00 mm |
-| **Tumor Core (TC)** | Mean DSC | 0.865 +/- 0.01 | 0.879 +/- 0.01 | **0.891 +/- 0.01** | >= 0.820 |
-| **Tumor Core (TC)** | HD_95 (mm) | 5.11 mm | 4.21 mm | **3.65 mm** | <= 6.00 mm |
-| **Whole Tumor (WT)** | Mean DSC | 0.912 +/- 0.01 | 0.921 +/- 0.01 | **0.934 +/- 0.01** | >= 0.880 |
-| **Whole Tumor (WT)** | HD_95 (mm) | 4.05 mm | 3.89 mm | **3.12 mm** | <= 5.00 mm |
-
----
-
-## 6. Repository Layout & Module Organization
-
-```
-├── configs/
-│   ├── data_config.yaml           # Preprocessing, normalization & label definitions
-│   ├── model_config.yaml          # Swin UNETR & MedNeXt hyperparameters
-│   └── deployment_config.yaml     # TensorRT & sliding window configuration
-├── src/
-│   ├── data/
-│   │   ├── transforms.py          # 1mm³ resampling, co-reg, Z-score, nested labels
-│   │   ├── dicom_io.py            # SimpleITK series reader & synthetic case generator
-│   │   └── dataset.py             # BraTS PyTorch dataset & data loaders
-│   ├── models/
-│   │   ├── swin_unetr.py          # 3D Swin UNETR multi-task architecture
-│   │   ├── mednext.py             # 3D MedNeXt 7x7x7 architecture
-│   │   └── losses.py              # Multi-label Soft Dice + Weighted CE composite loss
-│   ├── inference/
-│   │   ├── sliding_window.py      # 128³ Gaussian-weighted patch inferer
-│   │   ├── uncertainty.py         # Monte Carlo Dropout & TTA uncertainty
-│   │   └── trt_runner.py          # ONNX & TensorRT engine acceleration runner
-│   ├── evaluation/
-│   │   ├── metrics.py             # DSC, HD95, and Lesion-Wise Dice metrics
-│   │   └── validator.py           # 5-fold CV & benchmark report generator
-│   └── service/
-│       ├── app.py                 # FastAPI DICOMweb & MONAI Label service
-│       ├── dicom_seg.py           # Standard DICOM SEG object serializer
-│       └── active_learning.py     # Epistemic variance priority review queue
-├── web/
-│   └── templates/
-│       └── viewer.html            # WebGL Multi-Planar Reconstruction (MPR) dashboard
-├── docker/
-│   ├── Dockerfile                 # Container image for AI middleware
-│   ├── docker-compose.yml         # Orthanc PACS + AI Middleware + OHIF Viewer v3
-│   └── orthanc.json               # DICOMweb plugin configuration
-├── tests/
-│   ├── test_pipeline.py           # End-to-end unit test suite
-│   └── test_api_server.py         # Integration tests for DICOMweb & MONAI Label API
-├── train.py                       # Training orchestration script
-├── benchmark.py                   # Academic benchmark generator
-├── server.py                      # FastAPI server runner
-└── requirements.txt
+```text
+dataset/
+├── Training/
+│   ├── glioma/
+│   ├── meningioma/
+│   ├── notumor/
+│   └── pituitary/
+└── Testing/
+    ├── glioma/
+    ├── meningioma/
+    ├── notumor/
+    └── pituitary/
 ```
 
----
+Folder names are case-insensitive. `no tumor` and `no_tumor` are also accepted in place of `notumor`. Put PNG, JPG, or JPEG images directly in each class folder. Do not upload patient-identifiable images or information to a shared environment.
 
-## 7. Quickstart & Execution Commands
+For a stronger experiment, split by patient rather than by individual image. Nearby slices from the same patient can be very similar; allowing them into both training and validation/test sets can make the reported score misleading. Keep the test set separate until final evaluation.
 
-### 1. Run Unit Tests (All 5 Phases)
-```bash
-python -m unittest tests/test_pipeline.py
+## Train, evaluate, run
+
+Run from the repository root:
+
+```powershell
+python train.py --data-dir dataset/Training --epochs 10
+python evaluate.py --data-dir dataset/Testing
+python app.py
 ```
 
-### 2. Run API & DICOMweb Integration Tests
-```bash
-python tests/test_api_server.py
-```
+Training stratifies `dataset/Training` into an 80/20 train/validation split, applies a small horizontal-flip augmentation to training images, and writes the best-validation model to `checkpoints/custom_cnn_best.pth`. Evaluation reports metrics from `dataset/Testing`; those values are only meaningful for the data you actually supplied. The web app uses the same checkpoint. Open <http://127.0.0.1:5000>.
 
-### 3. Run Multi-Task Training
-```bash
-python train.py
-```
+The application accepts one 2D PNG/JPG image (up to 8 MB). It does not read DICOM or NIfTI volumes, perform tumor segmentation, connect to a hospital/PACS system, or provide a clinical triage score. SQLite and uploaded images are stored locally in `instance/` and `static/uploads/`.
 
-### 4. Run Academic Benchmarks
-```bash
-python benchmark.py
-```
+## Who could benefit, and realistic next steps
 
-### 5. Launch Clinical AI Service & Diagnostic Workstation
-```bash
-python server.py
-```
-Open `http://localhost:8000/` in any browser to interact with the Multi-Planar Reconstruction (MPR) visualizer, inspect tumor sub-regions, view uncertainty scores, and approve DICOM SEG annotations to PACS.
+- **Students and instructors:** a compact example of CNN training, image preprocessing, explainability, a Flask API, SQL persistence, and error review.
+- **Junior AI/ML applicants:** a portfolio demonstration of the full path from data to model evaluation and a usable interface. Present real test results, limitations, and your own contributions honestly.
+- **Research or teaching groups:** a possible offline teaching aid or starting point for studying model errors, provided the dataset is licensed appropriately and the work is independently validated.
 
-### 6. Full Container Stack Deployment (PACS + AI + OHIF)
-```bash
-docker-compose -f docker/docker-compose.yml up --build -d
-```
-- **OHIF Viewer v3**: `http://localhost:3000`
-- **Orthanc PACS & DICOMweb**: `http://localhost:8042`
-- **AI Middleware**: `http://localhost:8000`
+The realistic short-term income route is using the project to support job applications, internships, tutoring, or workshops. Selling a clinical prediction service is not a responsible next step for this prototype: it would require representative external validation, patient-level evidence, privacy/security controls, clinical governance, and applicable regulatory approval.
+
+## Safety and limitations
+
+This is coursework software, not a medical device. Class scores are not calibrated diagnostic probabilities. Grad-CAM shows image regions that influenced the model; it does not prove that those regions contain a tumor or explain a medical decision. Never use the application to diagnose, triage, or treat a person. Use de-identified data and consult dataset terms before training or sharing results.
