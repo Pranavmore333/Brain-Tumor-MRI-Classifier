@@ -86,7 +86,7 @@ def train_model(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Train the student-built CNN on a labeled MRI image dataset."
+        description="Train the CNN on a labeled MRI image dataset."
     )
     parser.add_argument("--data-dir", default="dataset/Training")
     parser.add_argument("--epochs", type=int, default=10)

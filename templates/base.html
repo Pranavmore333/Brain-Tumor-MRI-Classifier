@@ -12,14 +12,14 @@
     <header class="site-header">
         <a class="brand" href="{{ url_for('index') }}" aria-label="SliceLab home">
             <span class="brand-mark">S</span>
-            <span><strong>SliceLab</strong><small>Brain MRI learning project</small></span>
+            <span><strong>SliceLab</strong><small>Brain MRI classifier</small></span>
         </a>
         <nav class="site-nav" aria-label="Main navigation">
             <a class="{% if active_page == 'analyze' %}active{% endif %}" href="{{ url_for('index') }}">Analyze</a>
             <a class="{% if active_page == 'history' %}active{% endif %}" href="{{ url_for('history') }}">Case log</a>
             <a class="{% if active_page == 'about' %}active{% endif %}" href="{{ url_for('about') }}">About</a>
         </nav>
-        <span class="header-note">A student-built demo</span>
+        <span class="header-note">Local image analysis</span>
     </header>
     <main class="page-shell">
         {% block content %}{% endblock %}

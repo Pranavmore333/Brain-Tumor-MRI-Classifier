@@ -18,7 +18,7 @@ from models.gradcam import GradCAM
 
 IMAGE_SIZE = 224
 MAX_IMAGE_SIDE = 4096
-MODEL_NAME = "Student-built 4-block CNN"
+MODEL_NAME = "Four-block CNN"
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
